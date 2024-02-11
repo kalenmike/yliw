@@ -1,9 +1,20 @@
-use std::io::{self, Write};
-use std::thread;
-use std::time::Duration;
+use std:: {
+    io::{self, Write},
+    thread,
+    time::Duration,
+    fs,
+};
 use colored::Colorize;
 use chrono::{NaiveDate, Local, ParseError};
 use indicatif::{ProgressBar, ProgressStyle};
+use dirs;
+use serde_derive::Deserialize;
+
+#[derive(Deserialize, Debug)]
+struct UserConfig {
+    birthday: Option<String>,
+    show_weeks: Option<bool>,
+}
 
 /// Prints a visual representation of life in weeks.
 ///
@@ -283,9 +294,31 @@ fn main() {
 
     display_welcome_message();
 
-    let birthday = get_user_birthday();
-    let age_in_days = get_age_in_days(&birthday);
+    let mut config_dir = dirs::config_dir().expect("Failed to locate user's config directory");
+    config_dir.push("yliw");
+    config_dir.push("config.toml");
 
+    let mut user_config: UserConfig;
+    if let Ok(toml_content) = fs::read_to_string(&config_dir){
+        user_config = toml::from_str(&toml_content)
+            .expect("Failed to parse config file");
+    }else{
+        user_config = UserConfig { birthday: None, show_weeks: Some(true) };
+    }
+
+    if user_config.birthday.is_none() {
+        let birthday = get_user_birthday();
+        user_config.birthday = Some(birthday);
+    }
+
+    let age_in_days;
+    if let Some(birthday) = &user_config.birthday {
+        age_in_days = get_age_in_days(birthday);
+    } else {
+        println!("Birthday not found.");
+        std::process::exit(1);
+    }
+    
     let age_in_weeks = age_in_days as f64 / 7.0;
     let age_in_years = age_in_weeks as i32 / 52;
 
@@ -296,10 +329,10 @@ fn main() {
 
     display_progress_bar(&mut life_progress_bar, age_in_years);
     display_summary_message(expected_days, age_in_days);
-
-    println!();
-
-    print_life_in_weeks(age_in_weeks as usize);
+    
+    if user_config.show_weeks.unwrap_or(true){
+        print_life_in_weeks(age_in_weeks as usize);
+    }
 }
 
 // TESTS
