@@ -224,6 +224,7 @@ fn display_progress_bar(progress_bar :&mut  ProgressBar, age_in_years: i32) {
         progress_bar.set_position(year as u64);
         thread::sleep(Duration::from_millis(20));
     }
+    println!();
 }
 
 /// Display a summary message based on expected and remaining days.
@@ -243,10 +244,11 @@ fn display_progress_bar(progress_bar :&mut  ProgressBar, age_in_years: i32) {
 /// ```
 /// display_summary_message(36500, 18250);
 /// ```
-fn display_summary_message(expected_days: i32, remaining_days: i32){
+fn display_summary_message(expected_days: i32, age_in_days: i32){
+    let remaining_days = expected_days - age_in_days;
     let remaining_years = remaining_days / 365;
     let remaining_weeks = remaining_years * 52;
-    let completion_percent = (remaining_days as f64 / expected_days as f64) * 100.0;
+    let completion_percent = (age_in_days as f64 / expected_days as f64) * 100.0;
 
      let message = format!(
         "\n\n{}\n\nLooking ahead, here's what's still in store for you:\n\n\
